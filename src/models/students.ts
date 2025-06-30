@@ -16,7 +16,8 @@ const StudentsSchema = new mongoose.Schema({
 export const StudentsModel = mongoose.model("Students", StudentsSchema);
 
 export const getStudents = () => StudentsModel.find().populate('classRoom');
-export const getStudentById = (id: string) => StudentsModel.findById(id);
+export const getStudentById = (id: string) => StudentsModel.findById(id).populate('classRoom');
+export const getStudentByClassroomId = (id: string) => StudentsModel.find({classRoom : id}).populate('classRoom');
 export const createStudent = (values: Record<string, any>) => new StudentsModel(values).save().then((student) => student.toObject());
 export const deleteStudentById = (id: string) => StudentsModel.findOneAndDelete({ _id: id });
 export const updateStudentById = (id: string, values: Record<string, any>) => StudentsModel.findByIdAndUpdate(id, values);

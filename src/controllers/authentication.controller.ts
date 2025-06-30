@@ -1,47 +1,47 @@
 import express from "express";
-import {random , authentication} from "../helpers/encryption";
-import { getUserByEmail , createUser, getUserById } from "../models/users";
+import { random, authentication } from "../helpers/encryption";
+import { getUserByEmail, createUser, getUserById } from "../models/users";
 import { get } from "lodash";
 
-export const login = async (req:express.Request , res:express.Response):Promise<any> => {
+export const login = async (req: express.Request, res: express.Response): Promise<any> => {
     try {
-        const {email , password} = req.body;
-        if(!email || !password) {
+        const { email, password } = req.body;
+        if (!email || !password) {
             return res.sendStatus(400);
         }
 
         const user = await getUserByEmail(email).select('+authentication.salt +authentication.password');
-        if(!user) {
+        if (!user) {
             return res.sendStatus(400);
         }
 
-        const expectedHash = authentication(user.authentication.salt , password);
-        if(user.authentication.password !== expectedHash){
+        const expectedHash = authentication(user.authentication.salt, password);
+        if (user.authentication.password !== expectedHash) {
             return res.sendStatus(403);
         }
 
         const salt = random();
-        user.authentication.sessionToken = authentication(salt , user._id.toString());
+        user.authentication.sessionToken = authentication(salt, user._id.toString());
 
         await user.save();
 
-        res.cookie('token' , user.authentication.sessionToken, { domain : 'localhost' , path : '/' });
+        res.cookie('token', user.authentication.sessionToken, { domain: 'localhost', path: '/' });
 
         return res.status(200).json(user).end();
-    }catch(err){
+    } catch (err) {
         console.log(err);
         return res.sendStatus(400);
     }
 }
 
-export const logout = async (req:express.Request , res:express.Response):Promise<any> => {
+export const logout = async (req: express.Request, res: express.Response): Promise<any> => {
     try {
-        const currentUserId:string = get(req , 'identity._id');
+        const currentUserId: string = get(req, 'identity._id');
         const user = await getUserById(currentUserId).select('+authentication.salt +authentication.password');
         user.authentication.sessionToken = null;
         user.save();
 
-        res.clearCookie("token" , {domain : 'localhost' , path: '/'});
+        res.clearCookie("token", { domain: 'localhost', path: '/' });
         return res.sendStatus(200);
     } catch (err) {
         console.log(err);
@@ -49,16 +49,16 @@ export const logout = async (req:express.Request , res:express.Response):Promise
     }
 }
 
-export const register = async (req:express.Request , res:express.Response):Promise<any> => {
+export const register = async (req: express.Request, res: express.Response): Promise<any> => {
     try {
-        const { email , password , firstName , lastName , address , phoneNumber , role } = req.body;
+        const { email, password, firstName, lastName, address, phoneNumber, role } = req.body;
 
-        if(!email || !password || !firstName || !lastName || !phoneNumber || !role ){
+        if (!email || !password || !firstName || !lastName || !phoneNumber || !role) {
             return res.sendStatus(400);
         }
 
         const existingUser = await getUserByEmail(email);
-        if(existingUser){
+        if (existingUser) {
             return res.sendStatus(400);
         }
 
@@ -67,7 +67,7 @@ export const register = async (req:express.Request , res:express.Response):Promi
         const user = await createUser({
             email,
             authentication: {
-                password : authentication(salt , password),
+                password: authentication(salt, password),
                 salt
             },
             firstName,
